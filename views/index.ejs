@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Welcome To Coacher</title>
+    <style>
+        body {
+            background: url(https://cdn.isd623.org/isd623.org/files/styles/blog_featured_image/public/featured_image/Greg%20Ueland.jpg?itok=z3K0srB5);
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-top: 200px;
+            text-shadow: 1px 1px 1px black;
+            font-size: 50px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 id="welcome">Welcome</h1>
+</body>
+<script>
+    (function () {
+        var welcome = document.getElementById("welcome");
+        var nome = prompt("What's your name?");
+        welcome.textContent = "Welcome To Coacher " + nome;
+    })();
+</script>
+
+</html>
