@@ -17,6 +17,10 @@ module.exports = (sequelize, DataTypes) => {
         address: {
             type: DataTypes.STRING(200),
             allowNull: false
+        },
+        credit: {
+            type: DataTypes.FLOAT,
+            allowNull: true
         }
     },
         {
@@ -31,6 +35,16 @@ module.exports = (sequelize, DataTypes) => {
                 name: 'ShopId',
                 allowNull: true,
                 field: 'ShopId'
+            }
+        });
+        Customer.hasMany(models.Credit, {
+            as: 'credits',
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
+            foreignKey: {
+                name: 'CustomerId',
+                allowNull: false,
+                field: 'CustomerId'
             }
         });
     };

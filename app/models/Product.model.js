@@ -20,6 +20,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: false,
             min: 0
+        },
+        imageUrl: {
+            type: DataTypes.STRING(250),
+            allowNull: true
         }
     },
         {

@@ -6,26 +6,26 @@ const Op = require('sequelize').Op
 const config = require('../config/environment.config.json');
 
 // **************************
-//  Create Category
+//  Add Product
 // **************************
 
-const createCategory = async (req, res) => {
-    console.log('Create Category API Called');
+const addProduct = async (req, res) => {
+    console.log('Add Product API Called');
     try {
         let input = req.body;
 
-        let checkCategoryIfExist = await model.Category.findOne({
+        let checkProductIfExist = await model.Product.findOne({
             where: { name: input.name }
         });
-        if (checkCategoryIfExist) throw "Category Already Exists";
+        if (checkProductIfExist) throw "Product Already Exists";
 
-        let createCategory = await model.Category.create(input)
-        if (!createCategory) throw "Cannot Create Category";
+        let addProduct = await model.Product.create(input)
+        if (!addProduct) throw "Cannot Create Product";
 
         res.status(200).json({
             success: true,
             msg: "Successfully Created",
-            createCategory
+            addProduct
         })
     } catch (e) {
         res.status(500).json({
@@ -37,10 +37,10 @@ const createCategory = async (req, res) => {
 }
 
 // ***********************
-// Get Category
+// Get Products
 // ***********************
 
-const getCategories = async (req, res) => {
+const getProducts = async (req, res) => {
     try {
 
         let conditions = req.conditions;
@@ -54,9 +54,19 @@ const getCategories = async (req, res) => {
             }
         }
 
-        // Check if Category exist in conditions
-        let result = await model.Category.findAndCountAll({
+        // Check if Product exist in conditions
+        let result = await model.Product.findAndCountAll({
             where: conditions,
+            include: [
+                {
+                    model: model.Category,
+                    as: 'category'
+                },
+                {
+                    model: model.User,
+                    as: 'shop'
+                }
+            ],
             limit: limit,
             offset: offset,
             order: [['id', 'DESC']]
@@ -77,20 +87,20 @@ const getCategories = async (req, res) => {
 }
 
 // ****************************
-// Update Category
+// Update Product
 // ****************************
 
-const updateCategory = async (req, res) => {
-    console.log('Update Category API Called');
+const updateProduct = async (req, res) => {
+    console.log('Update Product API Called');
     try {
         let id = req.params.id;
         let data = req.body;
-        let updateCategory = await model.Category.update(data, { where: { id } });
-        if (updateCategory[0] == 0) throw "Cannot Update Category";
+        let updateProduct = await model.Product.update(data, { where: { id } });
+        if (updateProduct[0] == 0) throw "Cannot Update Product";
         res.status(200).json({
             success: true,
             msg: 'Successfully Updated',
-            updateCategory
+            updateProduct
         });
     } catch (e) {
         res.status(500).json({
@@ -102,21 +112,31 @@ const updateCategory = async (req, res) => {
 }
 
 // ******************************
-//  Get Category By Id
+//  Get Product By Id
 // ******************************
 
-const getCategoryById = async (req, res) => {
-    console.log('Get Category By Id API Called');
+const getProductById = async (req, res) => {
+    console.log('Get Product By Id API Called');
     try {
         let id = req.params.id;
-        let Category = await model.Category.findOne({
-            where: { id }
+        let product = await model.Product.findOne({
+            where: { id },
+            include: [
+                {
+                    model: model.Category,
+                    as: 'category'
+                },
+                {
+                    model: model.User,
+                    as: 'shop'
+                }
+            ],
         });
-        if (!Category) throw "Cannot Find Category";
+        if (!product) throw "Cannot Find Product";
         res.status(200).json({
             success: true,
             msg: 'Successfully Fetched',
-            Category
+            product
         })
     } catch (e) {
         res.status(501).json({
@@ -128,8 +148,8 @@ const getCategoryById = async (req, res) => {
 }
 
 module.exports = {
-    getCategories,
-    createCategory,
-    updateCategory,
-    getCategoryById
+    getProducts,
+    addProduct,
+    updateProduct,
+    getProductById
 }

@@ -111,8 +111,8 @@ const generateUniqueKey = () => {
     let key = Math.random().toString(36).slice(-8);
     uId = uId + key
 
-    model.User.findAll({
-      where: { uniqueId: uId }
+    model.Order.findAll({
+      where: { OrderId: uId }
     })
       .then((result) => {
         if (!result) {

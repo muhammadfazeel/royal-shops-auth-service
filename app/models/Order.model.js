@@ -16,8 +16,12 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true
         },
         credit: {
-            type: DataTypes.STRING(200),
+            type: DataTypes.FLOAT,
             allowNull: true
+        },
+        OrderId: {
+            type: DataTypes.STRING(200),
+            allowNull: false
         }
     },
         {
@@ -45,7 +49,7 @@ module.exports = (sequelize, DataTypes) => {
                 field: 'OrderId'
             }
         });
-        Order.hasMany(models.Product, {
+        Order.hasMany(models.OrderProduct, {
             as: 'products',
             onDelete: 'CASCADE',
             onUpdate: 'CASCADE',

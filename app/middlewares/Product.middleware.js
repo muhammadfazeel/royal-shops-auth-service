@@ -3,10 +3,10 @@ const generalMiddleware = require('./general.middleware')
 const _ = require('lodash')
 
 // **************************
-// Create Category
+// Create Product
 // **************************
 
-const validateCreateCategory = (req, res, done) => {
+const validateAddProduct = (req, res, done) => {
 
     const body = req.body
     const validatedValues = {}
@@ -23,13 +23,62 @@ const validateCreateCategory = (req, res, done) => {
         })
     }
 
+    if (!body.retailPrice || isNaN(body.retailPrice)) {
+        errorArray.push({
+            field: 'retailPrice',
+            error: 10380,
+            message: 'Please provide only valid \'retailPrice\' as numeric.'
+        })
+    }
+
+    if (!body.salePrice || isNaN(body.salePrice)) {
+        errorArray.push({
+            field: 'salePrice',
+            error: 10380,
+            message: 'Please provide only valid \'salePrice\' as numeric.'
+        })
+    }
+
+    if (!body.stock || isNaN(body.stock)) {
+        errorArray.push({
+            field: 'stock',
+            error: 10380,
+            message: 'Please provide only valid \'stock\' as numeric.'
+        })
+    }
+
+    if (!body.CategoryId || isNaN(body.CategoryId)) {
+        errorArray.push({
+            field: 'CategoryId',
+            error: 10380,
+            message: 'Please provide only valid \'CategoryId\' as numeric.'
+        })
+    }
+
+    if (body.hasOwnProperty('imageUrl')) {
+        // imageUrl is required, validating it as not empty, valid String and length range.
+        if (_.isEmpty(body.imageUrl) || !_.isString(body.imageUrl) || body.imageUrl.length < 2 || body.imageUrl.length > 250) {
+            errorArray.push({
+                field: 'imageUrl',
+                error: 10020,
+                message: '\'imageUrl\' is required as string, length must be between 2 and 250.'
+            })
+        }
+        validatedValues.imageUrl = body.imageUrl;
+    }
+
+
     // send array if error(s)
     if (errorArray.length) {
-        return generalMiddleware.standardErrorResponse(res, errorArray, 'category.middleware.validateCreateCategory')
+        return generalMiddleware.standardErrorResponse(res, errorArray, 'Product.middleware.validateAddProduct')
     }
 
     // Info Object
     validatedValues.name = body.name;
+    validatedValues.retailPrice = body.retailPrice;
+    validatedValues.salePrice = body.salePrice;
+    validatedValues.stock = body.stock;
+    validatedValues.CategoryId = body.CategoryId;
     validatedValues.ShopId = req.user.id;
 
     req.body = validatedValues
@@ -37,10 +86,10 @@ const validateCreateCategory = (req, res, done) => {
 }
 
 // **************************
-// Update Category
+// Update Research Product
 // **************************
 
-const updateCategory = (req, res, done) => {
+const updateProduct = (req, res, done) => {
     const body = req.body
     const validatedValues = {}
     const params = req.params
@@ -54,6 +103,50 @@ const updateCategory = (req, res, done) => {
             error: 10380,
             message: 'Please provide only valid \'id\' as numeric.'
         })
+    }
+
+    if (body.hasOwnProperty('retailPrice')) {
+        if (!body.retailPrice || isNaN(body.retailPrice)) {
+            errorArray.push({
+                field: 'retailPrice',
+                error: 10380,
+                message: 'Please provide only valid \'retailPrice\' as numeric.'
+            })
+        }
+        validatedValues.retailPrice = body.retailPrice
+    }
+
+    if (body.hasOwnProperty('salePrice')) {
+        if (!body.salePrice || isNaN(body.salePrice)) {
+            errorArray.push({
+                field: 'salePrice',
+                error: 10380,
+                message: 'Please provide only valid \'salePrice\' as numeric.'
+            })
+        }
+        validatedValues.salePrice = body.salePrice
+    }
+
+    if (body.hasOwnProperty('stock')) {
+        if (!body.stock || isNaN(body.stock)) {
+            errorArray.push({
+                field: 'stock',
+                error: 10380,
+                message: 'Please provide only valid \'stock\' as numeric.'
+            })
+        }
+        validatedValues.stock = body.stock
+    }
+
+    if (body.hasOwnProperty('CategoryId')) {
+        if (!body.CategoryId || isNaN(body.CategoryId)) {
+            errorArray.push({
+                field: 'CategoryId',
+                error: 10380,
+                message: 'Please provide only valid \'CategoryId\' as numeric.'
+            })
+        }
+        validatedValues.CategoryId = body.CategoryId
     }
 
     if (body.hasOwnProperty('name')) {
@@ -70,7 +163,7 @@ const updateCategory = (req, res, done) => {
 
     // send array if error(s)
     if (errorArray.length) {
-        return generalMiddleware.standardErrorResponse(res, errorArray, 'category.middleware.updateCategory')
+        return generalMiddleware.standardErrorResponse(res, errorArray, 'Product.middleware.updateProduct')
     }
 
     req.body = validatedValues
@@ -79,10 +172,10 @@ const updateCategory = (req, res, done) => {
 
 
 // *****************************
-//  Get Category By Id
+//  Get Product By Id
 // *****************************
 
-const getCategoryById = (req, res, done) => {
+const getProductById = (req, res, done) => {
     const errorArray = []
     const params = req.params
 
@@ -95,16 +188,16 @@ const getCategoryById = (req, res, done) => {
     }
 
     if (!_.isEmpty(errorArray)) {
-        return generalMiddleware.standardErrorResponse(res, errorArray, 'category.middleware.getCategoryById')
+        return generalMiddleware.standardErrorResponse(res, errorArray, 'Product.middleware.getProductById')
     }
     done()
 }
 
 // ****************************
-//  Get All Categories
+//  Get All Products
 // ****************************
 
-const getAllCategories = (req, res, done) => {
+const getAllProducts = (req, res, done) => {
     const errorArray = []
     const query = req.query
     const validatedQuery = {}
@@ -151,9 +244,22 @@ const getAllCategories = (req, res, done) => {
         validatedQuery.ShopId = query.ShopId
     }
 
+    // CategoryId is an optional numeric property, if it is given than validate it.
+    if (query.hasOwnProperty('CategoryId')) {
+        // Validating as not empty, valid numeric value with range.
+        if (!query.CategoryId || isNaN(query.CategoryId)) {
+            errorArray.push({
+                field: 'CategoryId',
+                error: 10120,
+                message: 'Please provide only valid \'CategoryId\' as numeric.'
+            })
+        }
+        validatedQuery.CategoryId = query.CategoryId
+    }
+
 
     if (!_.isEmpty(errorArray)) {
-        return generalMiddleware.standardErrorResponse(res, errorArray, 'user.middleware.getAllCategories')
+        return generalMiddleware.standardErrorResponse(res, errorArray, 'user.middleware.getAllProducts')
     }
 
     if (query.limit && query.limit > 0) {
@@ -171,10 +277,10 @@ const getAllCategories = (req, res, done) => {
 }
 
 // ************************
-// Delete Category
+// Delete Product
 // ************************
 
-const deleteCategory = (req, res, done) => {
+const deleteProduct = (req, res, done) => {
     const errorArray = []
     const params = req.params
 
@@ -187,15 +293,15 @@ const deleteCategory = (req, res, done) => {
     }
 
     if (!_.isEmpty(errorArray)) {
-        return generalMiddleware.standardErrorResponse(res, errorArray, 'category.middleware.deleteCategory')
+        return generalMiddleware.standardErrorResponse(res, errorArray, 'Product.middleware.deleteProduct')
     }
     done()
 }
 
 module.exports = {
-    validateCreateCategory,
-    updateCategory,
-    getCategoryById,
-    getAllCategories,
-    deleteCategory
+    validateAddProduct,
+    updateProduct,
+    getProductById,
+    getAllProducts,
+    deleteProduct
 }

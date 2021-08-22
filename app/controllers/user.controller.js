@@ -242,7 +242,8 @@ const getUsers = async (req, res) => {
     let result = await model.User.findAndCountAll({
       where: conditions,
       limit: limit,
-      offset: offset
+      offset: offset,
+      order: [['id', 'DESC']]
     })
     res.status(200).json({
       success: true,
