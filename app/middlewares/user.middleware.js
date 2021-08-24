@@ -131,7 +131,6 @@ const validateSignUp = (req, res, done) => {
 const validateLoginCredentials = (req, res, done) => {
   const body = req.body.values;
   // get all the errors in an array
-  console.log("req", body);
 
   const errorArray = [];
   // email is required, validating it as not empty, valid String and length range.

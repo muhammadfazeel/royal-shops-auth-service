@@ -1,21 +1,24 @@
-'use strict'
-const model = require('../models')
-const helpingHelperMethods = require('../helpers/helping.helper');
-const _ = require('lodash')
-const Op = require('sequelize').Op
-const config = require('../config/environment.config.json');
+"use strict";
+const model = require("../models");
+const helpingHelperMethods = require("../helpers/helping.helper");
+const _ = require("lodash");
+const Op = require("sequelize").Op;
+const config = require("../config/environment.config.json");
 
 // *****************
 // Create New User
 // *****************
 
 const signUp = async (req, res) => {
-  console.log('Signup API Called')
+  console.log("Signup API Called");
   try {
     let input = req.body;
 
     // check if input email already exist
-    let user = await model.User.findOne({ where: { email: input.email }, attributes: ['id'] })
+    let user = await model.User.findOne({
+      where: { email: input.email },
+      attributes: ["id"],
+    });
     // check user existence
     if (!user) {
       let newUser = await model.User.create(input);
@@ -24,13 +27,16 @@ const signUp = async (req, res) => {
       let emailToken = await helpingHelperMethods.generateRandomToken(36);
       newUser.emailVerifiedToken = emailToken;
 
-      newUser.salt = newUser.makeSalt()
-      newUser.hashedPassword = newUser.encryptPassword(input.password, newUser.salt);
+      newUser.salt = newUser.makeSalt();
+      newUser.hashedPassword = newUser.encryptPassword(
+        input.password,
+        newUser.salt
+      );
       newUser.save();
 
-
-      const verificationLink = `${config.Domain
-        }/verifyEmail?emToken=${emailToken}&e=${encodeURIComponent(input.email)}`;
+      const verificationLink = `${
+        config.Domain
+      }/verifyEmail?emToken=${emailToken}&e=${encodeURIComponent(input.email)}`;
 
       // Mail Service
       helpingHelperMethods.verifyEmail(verificationLink, input.email);
@@ -39,71 +45,70 @@ const signUp = async (req, res) => {
       let result = {
         id: newUser.id,
         name: newUser.name,
-        email: newUser.email
-      }
+        email: newUser.email,
+      };
 
       res.status(200).json({
         success: true,
-        msg: 'Successfully Created',
-        result
+        msg: "Successfully Created",
+        result,
       });
-
     } else throw "Email Already Exist";
   } catch (e) {
     res.status(500).json({
       success: false,
-      ex: 'Exception: ',
-      msg: e
-    })
+      ex: "Exception: ",
+      msg: e,
+    });
   }
-}
+};
 
 // ************
 // User Login
 // ************
 
 const login = function (req, res) {
-
-  let input = req.body;
-  let email = input.email
-  let password = input.password
-  let userData = {}
+  let input = req.body.values;
+  let email = input.email;
+  let password = input.password;
+  let userData = {};
 
   // check if email exist and isDeleted equal to false
   return model.User.findOne({ where: { email: email } })
     .then((user) => {
       if (!user || !user.salt || !user.hashedPassword) {
-        throw "Invalid email or Password"
+        throw "Invalid email or Password";
       } else if (!user.authenticate(password)) {
-        throw "Invalid email or Password"
+        throw "Invalid email or Password";
       }
       // convert mongoose document object to plain json object and return user
-      return user.toJSON()
+      return user.toJSON();
     })
     .then((user) => {
-      userData.userInfo = user
+      userData.userInfo = user;
       const tokenData = {
         id: userData.userInfo.id,
         name: userData.userInfo.name,
-        email: userData.userInfo.email
-      }
+        email: userData.userInfo.email,
+      };
 
       userData.userInfo = {
-        ...tokenData
-      }
-      return helpingHelperMethods.signLoginData({ data: tokenData })
+        ...tokenData,
+      };
+      return helpingHelperMethods.signLoginData({ data: tokenData });
     })
     .then((tokenData) => {
-      userData.tokenInfo = tokenData
-      res.status(200).json({ userData })
-    }).catch((e) => {
+      userData.tokenInfo = tokenData;
+      res.status(200).json({ userData });
+    })
+    .catch((e) => {
       res.status(500).json({
         success: false,
         msg: e,
-        ex: "Exception: "
-      })
-    })
-}
+        ex: "Exception: ",
+      });
+    });
+};
 
 // *****************
 // Change Password
@@ -116,8 +121,8 @@ const changePassword = async (req, res) => {
   model.User.findOne({
     where: {
       id: id,
-      isDeleted: false
-    }
+      isDeleted: false,
+    },
   })
     .then(async (user) => {
       if (!user) throw "User not found";
@@ -125,25 +130,26 @@ const changePassword = async (req, res) => {
       // Validate password
       if (!user.authenticate(data.oldPassword)) throw "Old Password is wrong";
 
-      user.salt = user.makeSalt()
+      user.salt = user.makeSalt();
       // hashing newPassword, encrypted
-      user.hashedPassword = user.encryptPassword(data.newPassword, user.salt)
+      user.hashedPassword = user.encryptPassword(data.newPassword, user.salt);
 
       // save user
-      await user.save()
+      await user.save();
       res.status(200).json({
         success: true,
-        msg: 'Password Changed Successfully',
-        user
-      })
-    }).catch(e => {
+        msg: "Password Changed Successfully",
+        user,
+      });
+    })
+    .catch((e) => {
       res.status(501).json({
         success: false,
-        ex: 'Exception: ',
-        msg: e
-      })
-    })
-}
+        ex: "Exception: ",
+        msg: e,
+      });
+    });
+};
 
 // **************
 // Verify Phone
@@ -151,42 +157,46 @@ const changePassword = async (req, res) => {
 
 const verifyOtp = function (req, res) {
   let input = req.body;
-  let email = input.email
-  let otp = input.otp
+  let email = input.email;
+  let otp = input.otp;
 
   // check if phone exist and isDeleted equal to false
   model.User.findOne({ where: { email: email, isDeleted: false } })
     .then((user) => {
       if (!user) throw "No user found against this email";
 
-      user.otp = parseInt(user.otp, 10)
+      user.otp = parseInt(user.otp, 10);
 
       // matching otp against user verification code
-      if (otp !== user.otp || Date.parse(user.otpValidTill) < Date.parse(new Date())) throw "Failed to Verify email, invalid otp or it is expired.";
+      if (
+        otp !== user.otp ||
+        Date.parse(user.otpValidTill) < Date.parse(new Date())
+      )
+        throw "Failed to Verify email, invalid otp or it is expired.";
 
-      user.otp = ''
-      user.isVerified = true
-      user.save()
+      user.otp = "";
+      user.isVerified = true;
+      user.save();
       res.status(200).json({
         success: true,
-        msg: 'Successfully Verified',
-        user
-      })
-    }).catch((e) => {
+        msg: "Successfully Verified",
+        user,
+      });
+    })
+    .catch((e) => {
       res.status(500).json({
         success: false,
-        ex: 'Exception: ',
-        msg: e
-      })
-    })
-}
+        ex: "Exception: ",
+        msg: e,
+      });
+    });
+};
 
 // ***********
 // Resend Otp
 // ***********
 
 const resendOtp = function (req, res) {
-
   let email = req.body.email;
   // check if email exist and isDeleted equal to false
   return model.User.findOne({ where: { email: email } })
@@ -194,30 +204,31 @@ const resendOtp = function (req, res) {
       if (!user) throw "Invalid Email";
       if (user.dataValues.isVerified) throw "Already Verified";
 
-      let now = new Date()
-      now.setMinutes(now.getMinutes() + 10) // timestamp
-      now = new Date(now) // Date object
+      let now = new Date();
+      now.setMinutes(now.getMinutes() + 10); // timestamp
+      now = new Date(now); // Date object
 
-      user.otpValidTill = now
-      user.otp = Math.round(Math.random() * 9000 + 1000)
+      user.otpValidTill = now;
+      user.otp = Math.round(Math.random() * 9000 + 1000);
       user.save().then(() => {
         // Send Email
         helpingHelperMethods.verifyOTP(user.otp, user.email);
-      })
+      });
 
       // Send otp
       res.status(200).json({
         success: true,
-        msg: 'Successfully Sent OTP'
-      })
-    }).catch((e) => {
+        msg: "Successfully Sent OTP",
+      });
+    })
+    .catch((e) => {
       res.status(500).json({
         success: false,
-        ex: 'Exception: ',
-        msg: e
-      })
-    })
-}
+        ex: "Exception: ",
+        msg: e,
+      });
+    });
+};
 
 // ***********
 // Get Users
@@ -225,17 +236,16 @@ const resendOtp = function (req, res) {
 
 const getUsers = async (req, res) => {
   try {
-
     let conditions = req.conditions;
     let coachCondition = {};
 
-    let limit = Number(req.limit)
-    let offset = Number(req.offset)
+    let limit = Number(req.limit);
+    let offset = Number(req.offset);
 
     if (conditions.name) {
       conditions.name = {
-        [Op.like]: `%${conditions.name}%`
-      }
+        [Op.like]: `%${conditions.name}%`,
+      };
     }
 
     // Check if user exist in conditions
@@ -243,21 +253,21 @@ const getUsers = async (req, res) => {
       where: conditions,
       limit: limit,
       offset: offset,
-      order: [['id', 'DESC']]
-    })
+      order: [["id", "DESC"]],
+    });
     res.status(200).json({
       success: true,
-      msg: 'Successfully Fetched',
-      result
-    })
+      msg: "Successfully Fetched",
+      result,
+    });
   } catch (e) {
     res.status(500).json({
       success: false,
-      ex: 'Exception: ',
-      msg: e
-    })
+      ex: "Exception: ",
+      msg: e,
+    });
   }
-}
+};
 
 // ****************
 // Forgot Password
@@ -270,70 +280,72 @@ const forgotPassword = (req, res) => {
     .then((user) => {
       if (!user) throw "User Not Found";
 
-      let now = new Date()
-      now.setMinutes(now.getMinutes() + 10) // timestamp
-      now = new Date(now) // Date object
+      let now = new Date();
+      now.setMinutes(now.getMinutes() + 10); // timestamp
+      now = new Date(now); // Date object
 
-      user.otpValidTill = now
-      user.otp = Math.round(Math.random() * 9000 + 1000)
+      user.otpValidTill = now;
+      user.otp = Math.round(Math.random() * 9000 + 1000);
       user.save().then(() => {
         // Send Email
         helpingHelperMethods.verifyOTP(user.otp, user.email);
-      })
+      });
       res.status(200).json({
         success: true,
-        msg: 'OTP Sent By Email'
-      })
-    }).catch((e) => {
+        msg: "OTP Sent By Email",
+      });
+    })
+    .catch((e) => {
       res.status(500).json({
         success: false,
-        ex: 'Exception: ',
-        msg: e
-      })
-    })
-}
+        ex: "Exception: ",
+        msg: e,
+      });
+    });
+};
 
 // ***************
 // Validation
 // ***************
 
 const userValidation = (req, res) => {
-  let userData = {}
+  let userData = {};
 
   // check if email exist and isDeleted equal to false
   model.User.findOne({
     where: {
-      id: req.user.id
-    }
+      id: req.user.id,
+    },
   })
     .then((user) => {
       // convert mongoose document object to plain json object and return user
-      return user.toJSON()
+      return user.toJSON();
     })
     .then((user) => {
-      userData.userInfo = user
+      userData.userInfo = user;
       const tokenData = {
         id: userData.userInfo.id,
         name: userData.userInfo.name,
-        email: userData.userInfo.email
-      }
+        email: userData.userInfo.email,
+      };
 
       userData.userInfo = {
-        ...tokenData
-      }
-      return helpingHelperMethods.signLoginData({ data: tokenData })
+        ...tokenData,
+      };
+      return helpingHelperMethods.signLoginData({ data: tokenData });
     })
     .then((tokenData) => {
-      userData.tokenInfo = tokenData
-      res.status(200).json({ userData })
-    }).catch((e) => {
+      userData.tokenInfo = tokenData;
+      res.status(200).json({ userData });
+    })
+    .catch((e) => {
       res.status(500).json({
         success: false,
         msg: e,
-        ex: "Exception: "
-      })
-    })
-}
+        ex: "Exception: ",
+      });
+    });
+};
 
 // ****************************
 // Get data of logged in user.
@@ -344,23 +356,24 @@ const getLoggedInUser = function (req, res) {
   return model.User.findOne({
     where: {
       id: req.token.id,
-      isDeleted: false
-    }
+      isDeleted: false,
+    },
   })
     .then((user) => {
       res.status(200).json({
         success: true,
-        msg: 'fetched Successfully',
-        user
-      })
-    }).catch((e) => {
-      res.status(500).json({
-        success: false,
-        ex: 'Exception: ',
-        msg: e
+        msg: "fetched Successfully",
+        user,
       });
     })
-}
+    .catch((e) => {
+      res.status(500).json({
+        success: false,
+        ex: "Exception: ",
+        msg: e,
+      });
+    });
+};
 
 // ********************************
 // Check input password is correct.
@@ -368,14 +381,14 @@ const getLoggedInUser = function (req, res) {
 
 const checkPassword = function (req, res) {
   let input = req.body;
-  let email = input.email
-  let password = input.password
+  let email = input.email;
+  let password = input.password;
   // check if email exist and isDeleted equal to false
   return model.User.findOne({
     where: {
       email: email,
-      isDeleted: false
-    }
+      isDeleted: false,
+    },
   })
     .then((user) => {
       if (!user) throw "User Not Found";
@@ -383,21 +396,22 @@ const checkPassword = function (req, res) {
       if (!user.authenticate(password)) {
         res.status(200).json({
           success: true,
-          msg: 'Password Not Matched'
-        })
+          msg: "Password Not Matched",
+        });
       }
       res.status(200).json({
         success: true,
-        msg: 'Password Matched'
-      })
-    }).catch((e) => {
+        msg: "Password Matched",
+      });
+    })
+    .catch((e) => {
       res.status(500).json({
         success: false,
-        ex: 'Exception: ',
-        msg: e
-      })
-    })
-}
+        ex: "Exception: ",
+        msg: e,
+      });
+    });
+};
 
 // *****************
 // Update User.
@@ -405,32 +419,33 @@ const checkPassword = function (req, res) {
 
 const updateUser = function (req, res) {
   let id = req.body.id;
-  let data = req.body.data
+  let data = req.body.data;
   model.User.findOne({
     where: {
-      id: id
-    }
+      id: id,
+    },
   })
     .then(async (user) => {
       if (_.isEmpty(user)) throw "User Not Found";
       // Update user
       if (data) {
-        user.set(data)
-        user.save()
+        user.set(data);
+        user.save();
       }
       res.status(200).json({
         success: true,
-        msg: 'Successfully Updated',
-        user
-      })
-    }).catch((e) => {
+        msg: "Successfully Updated",
+        user,
+      });
+    })
+    .catch((e) => {
       res.status(500).json({
         success: false,
         ex: "Exception: ",
-        msg: e
-      })
-    })
-}
+        msg: e,
+      });
+    });
+};
 
 // ********************************
 // changeCurrentPassword.
@@ -442,34 +457,35 @@ const changeCurrentPassword = function (req, res) {
   // check if phone exist and isDeleted equal to false
   return model.User.findOne({
     where: {
-      id: id
-    }
+      id: id,
+    },
   })
     .then(async (user) => {
-      if (!user) throw "User Not Found"
+      if (!user) throw "User Not Found";
 
       // Validate password
       if (!user.authenticate(data.oldPassword)) throw "Old Password is wrong";
 
-      user.salt = user.makeSalt()
+      user.salt = user.makeSalt();
       // hashing newPassword, encrypted
-      user.hashedPassword = user.encryptPassword(data.newPassword, user.salt)
+      user.hashedPassword = user.encryptPassword(data.newPassword, user.salt);
 
       // save user
-      await user.save()
+      await user.save();
       res.status(200).json({
         success: true,
-        msg: 'Successfully Changed',
-        user
-      })
-    }).catch((e) => {
+        msg: "Successfully Changed",
+        user,
+      });
+    })
+    .catch((e) => {
       res.status(500).json({
         success: false,
-        ex: 'Exception: ',
-        msg: e
-      })
-    })
-}
+        ex: "Exception: ",
+        msg: e,
+      });
+    });
+};
 
 // ********************************
 // deleteUser.
@@ -480,28 +496,29 @@ const deleteUser = (req, res) => {
   model.User.findOne({
     where: {
       id: req.params.id,
-      isDeleted: false
-    }
+      isDeleted: false,
+    },
   })
     .then((user) => {
       if (_.isEmpty(user)) throw "User Not Found";
       // User found, change value of isDeleted to true
-      user.isDeleted = true
+      user.isDeleted = true;
       // save User
-      user.save()
+      user.save();
       res.status(200).json({
         success: true,
-        msg: 'User Deleted',
-        user
-      })
-    }).catch((e) => {
+        msg: "User Deleted",
+        user,
+      });
+    })
+    .catch((e) => {
       res.status(500).json({
         success: false,
-        ex: 'Exception ',
-        msg: e
-      })
-    })
-}
+        ex: "Exception ",
+        msg: e,
+      });
+    });
+};
 
 // ***************
 // Approve User
@@ -509,25 +526,27 @@ const deleteUser = (req, res) => {
 
 const approveUser = async (req, res) => {
   try {
-    let input = req.body.validatedData
-    let changeStatus = await model.User.update({
-      isApproved: input.isApproved
-    },
-      { where: { id: input.UserId } });
-    if (changeStatus[0] == 0) throw 'Cannot Change Status';
+    let input = req.body.validatedData;
+    let changeStatus = await model.User.update(
+      {
+        isApproved: input.isApproved,
+      },
+      { where: { id: input.UserId } }
+    );
+    if (changeStatus[0] == 0) throw "Cannot Change Status";
     res.status(200).json({
       success: true,
-      msg: 'Status Changed Successfully',
-      changeStatus
-    })
+      msg: "Status Changed Successfully",
+      changeStatus,
+    });
   } catch (e) {
     res.status(500).json({
       success: false,
-      ex: 'Exception: ',
-      msg: e
-    })
+      ex: "Exception: ",
+      msg: e,
+    });
   }
-}
+};
 
 // *************************
 //  Email Verification
@@ -555,24 +574,20 @@ const emailVerification = async (req, res) => {
           .status(200)
           .json({ success: true, msg: "Email verified successfully" });
       } else {
-        return res
-          .status(401)
-          .json({ success: false, msg: "No user found" });
+        return res.status(401).json({ success: false, msg: "No user found" });
       }
     } else {
-      return res
-        .status(401)
-        .json({ success: false, msg: "Incomplete data" });
+      return res.status(401).json({ success: false, msg: "Incomplete data" });
     }
   } catch (error) {
     console.log(error);
     return res.status(401).json({
       success: false,
-      ex: 'Exception',
-      msg: e
+      ex: "Exception",
+      msg: e,
     });
   }
-}
+};
 
 // *************************
 //  Reset Password Mail
@@ -586,9 +601,7 @@ const resetPasswordMail = async (req, res) => {
       where: { email },
     });
     if (!user) {
-      return res
-        .status(401)
-        .json({ success: false, msg: "No user found" });
+      return res.status(401).json({ success: false, msg: "No user found" });
     }
 
     // To Generate Random Token
@@ -597,21 +610,20 @@ const resetPasswordMail = async (req, res) => {
     await user.save();
 
     // Verification Email With Reset Token
-    const verificationLink = `${config.Domain
-      }/reset-password?emToken=${passwordResetToken}&e=${encodeURIComponent(
-        email
-      )}`;
+    const verificationLink = `${
+      config.Domain
+    }/reset-password?emToken=${passwordResetToken}&e=${encodeURIComponent(
+      email
+    )}`;
 
     // Send Email With verification Link
     helpingHelperMethods.passResetMail(verificationLink, email);
-    return res
-      .status(200)
-      .json({ success: true, msg: "email has been sent" });
+    return res.status(200).json({ success: true, msg: "email has been sent" });
   } catch (error) {
     console.log(error);
     res.status(401).json({ success: false, msg: "No user found" });
   }
-}
+};
 
 // ****************************
 // Reset Password
@@ -637,9 +649,7 @@ const resetPassword = async (req, res) => {
       });
       if (!user) {
         console.log("No User found");
-        return res
-          .status(401)
-          .json({ success: false, msg: "No User found" });
+        return res.status(401).json({ success: false, msg: "No User found" });
       }
 
       user.passwordResetToken = "";
@@ -654,10 +664,11 @@ const resetPassword = async (req, res) => {
       return res.status(401).json({ success: false, msg: "Invalid request" });
     }
   } catch (error) {
-    return res.status(401).json({ success: false, ex: 'Exception', msg: error });
+    return res
+      .status(401)
+      .json({ success: false, ex: "Exception", msg: error });
   }
-}
-
+};
 
 module.exports = {
   signUp,
@@ -676,5 +687,5 @@ module.exports = {
   approveUser,
   resetPasswordMail,
   emailVerification,
-  userValidation
-}
+  userValidation,
+};
