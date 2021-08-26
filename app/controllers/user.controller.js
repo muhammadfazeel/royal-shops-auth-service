@@ -34,9 +34,8 @@ const signUp = async (req, res) => {
       );
       newUser.save();
 
-      const verificationLink = `${
-        config.Domain
-      }/verifyEmail?emToken=${emailToken}&e=${encodeURIComponent(input.email)}`;
+      const verificationLink = `${config.Domain
+        }/verifyEmail?emToken=${emailToken}&e=${encodeURIComponent(input.email)}`;
 
       // Mail Service
       helpingHelperMethods.verifyEmail(verificationLink, input.email);
@@ -68,7 +67,7 @@ const signUp = async (req, res) => {
 // ************
 
 const login = function (req, res) {
-  let input = req.body.values;
+  let input = req.body;
   let email = input.email;
   let password = input.password;
   let userData = {};
@@ -610,11 +609,10 @@ const resetPasswordMail = async (req, res) => {
     await user.save();
 
     // Verification Email With Reset Token
-    const verificationLink = `${
-      config.Domain
-    }/reset-password?emToken=${passwordResetToken}&e=${encodeURIComponent(
-      email
-    )}`;
+    const verificationLink = `${config.Domain
+      }/reset-password?emToken=${passwordResetToken}&e=${encodeURIComponent(
+        email
+      )}`;
 
     // Send Email With verification Link
     helpingHelperMethods.passResetMail(verificationLink, email);

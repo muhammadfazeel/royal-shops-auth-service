@@ -129,7 +129,7 @@ const validateSignUp = (req, res, done) => {
 // ****************************
 
 const validateLoginCredentials = (req, res, done) => {
-  const body = req.body.values;
+  const body = req.body;
   // get all the errors in an array
 
   const errorArray = [];
