@@ -52,8 +52,14 @@ const signUp = async (req, res) => {
         msg: "Successfully Created",
         result,
       });
-    } else throw "Email Already Exist";
+    } else {
+      res.status(400).json({
+        success: false,
+        msg: "Email already exist"
+      })
+    };
   } catch (e) {
+    console.log("See the exception", e);
     res.status(500).json({
       success: false,
       ex: "Exception: ",
