@@ -7,7 +7,11 @@ const app = express();
 const helmet = require("helmet");
 const models = require("./app/models");
 const cors = require("cors");
+const comression = require("compression");
 
+app.use(cors());
+app.use(helmet());
+app.use(comression());
 const adminPath = path.join(__dirname, "../reswel-admin/build");
 const clientPath = path.join(__dirname, "../reswel-frontend/build");
 
@@ -17,17 +21,13 @@ app.get("/api/v1/auth/health", function (req, res) {
     .status(200)
     .send(
       "*** Welcome To Reswel *** \n Auth Service working 100%... \n " +
-        new Date(Date.now())
+      new Date(Date.now())
     );
 });
 global.winston = require("./app/config/winston");
 
 // Initialize Express
 require("./app/config/express")(app, passport);
-
-app.use(cors());
-
-// app.use(helmet());
 app.use("/static", express.static("public"));
 
 //app.use(express_layout);
