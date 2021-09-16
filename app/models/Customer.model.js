@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         credit: {
             type: DataTypes.FLOAT,
-            allowNull: true
+            defaultValue: 0
         }
     },
         {

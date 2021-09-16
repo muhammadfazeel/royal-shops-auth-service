@@ -23,7 +23,7 @@ const addCustomer = async (req, res) => {
                 },
                 {
                     phone: {
-                        [Op.or]: input.phone
+                        [Op.eq]: input.phone
                     }
                 }
             ]
@@ -43,6 +43,7 @@ const addCustomer = async (req, res) => {
             addCustomer
         })
     } catch (e) {
+        console.log(e)
         res.status(500).json({
             success: false,
             ex: 'Exception: ',
@@ -183,14 +184,14 @@ const credit = async (req, res) => {
         if (!customer) throw "Cannot Find Customer";
 
         if (customer.dataValues.credit === 0) throw "Credit is Already Zero";
-        if (customer.dataValues.credit < data.amount) throw "Invalid Amount";
+        if (customer.dataValues.credit < data.amount) throw "Amount is Greater than Available Credit";
 
         let credit = customer.dataValues.credit;
         credit = credit - data.amount;
 
         customer.credit = credit;
         customer.save()
-
+        model.Credit.create({ credit: data.amount, CustomerId: id })
         res.status(200).json({
             success: true,
             msg: 'Successfully Fetched',

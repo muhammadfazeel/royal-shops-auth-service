@@ -13,8 +13,7 @@ const addOrder = async (req, res) => {
     console.log('Add Order API Called');
     try {
         let input = req.body;
-        if (!input.CustomerId && input.credit) throw "Cannot Add Credit Without CustomerId";
-        input.OrderId = helpingHelperMethods.generateUniqueKey();
+        input.OrderId = await helpingHelperMethods.generateUniqueKey();
         let addOrder = await model.Order.create(input);
         if (!addOrder) throw "Cannot Create Order";
 
@@ -22,7 +21,9 @@ const addOrder = async (req, res) => {
         for (let i = 0; i < input.products.length; i++) {
             orderProduct.push({
                 OrderId: addOrder.id,
-                ProductId: input.products[i]
+                ProductId: input.products[i].ProductId,
+                quantity: input.products[i].quantity,
+                price: input.products[i].price
             });
         }
         await model.OrderProduct.bulkCreate(orderProduct);
@@ -56,13 +57,36 @@ const getOrders = async (req, res) => {
         let limit = Number(req.limit)
         let offset = Number(req.offset)
 
+        if (conditions.startDate) {
+            conditions.createdAt = {
+                [Op.gte]: conditions.startDate
+            }
+            delete conditions.startDate
+        }
+
+        if (conditions.endDate) {
+            conditions.createdAt = {
+                [Op.lte]: conditions.endDate
+            }
+            delete conditions.endDate
+        }
+
+        let customerCondition = {}
+        if (conditions.name) {
+            customerCondition.name = {
+                [Op.like]: `%${conditions.name}%`
+            }
+            delete conditions.name
+        }
+
         // Check if Product exist in conditions
         let result = await model.Order.findAndCountAll({
             where: conditions,
             include: [
                 {
                     model: model.Customer,
-                    as: 'customer'
+                    as: 'customer',
+                    where: customerCondition
                 }
             ],
             limit: limit,
@@ -95,6 +119,10 @@ const updateOrder = async (req, res) => {
         let data = req.body;
         let updateOrder = await model.Order.update(data, { where: { id } });
         if (updateOrder[0] == 0) throw "Cannot Update Order";
+        if (data.products) {
+            await model.OrderProduct.destroy({ where: { OrderId: id } });
+            await model.OrderProduct.bulkCreate(data.products);
+        }
         res.status(200).json({
             success: true,
             msg: 'Successfully Updated',
@@ -113,20 +141,20 @@ const updateOrder = async (req, res) => {
 //  Get Product By Id
 // ******************************
 
-const getProductById = async (req, res) => {
+const getPOrderById = async (req, res) => {
     console.log('Get Product By Id API Called');
     try {
         let id = req.params.id;
-        let product = await model.Product.findOne({
+        let product = await model.Order.findOne({
             where: { id },
             include: [
                 {
-                    model: model.Category,
-                    as: 'category'
+                    model: model.OrderProduct,
+                    as: 'products'
                 },
                 {
-                    model: model.User,
-                    as: 'shop'
+                    model: model.Customer,
+                    as: 'customer'
                 }
             ],
         });
@@ -149,5 +177,5 @@ module.exports = {
     getOrders,
     addOrder,
     updateOrder,
-    getProductById
+    getPOrderById
 }

@@ -50,13 +50,13 @@ const validateAddCustomer = (req, res, done) => {
         })
     }
 
-    if (!body.credit || isNaN(body.credit)) {
-        errorArray.push({
-            field: 'credit',
-            error: 10380,
-            message: 'Please provide only valid \'credit\' as numeric.'
-        })
-    }
+    // if (!body.credit || isNaN(body.credit)) {
+    //     errorArray.push({
+    //         field: 'credit',
+    //         error: 10380,
+    //         message: 'Please provide only valid \'credit\' as numeric.'
+    //     })
+    // }
 
     // send array if error(s)
     if (errorArray.length) {
@@ -348,7 +348,7 @@ const updateCredit = (req, res, done) => {
 //  Get All Customer Credits
 // ****************************
 
-const getAllCustomers = (req, res, done) => {
+const getCustomerCredit = (req, res, done) => {
     const errorArray = []
     const query = req.query
     const validatedQuery = {}
@@ -416,5 +416,6 @@ module.exports = {
     getCustomerById,
     getAllCustomers,
     deleteCustomer,
-    updateCredit
+    updateCredit,
+    getCustomerCredit
 }

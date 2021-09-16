@@ -12,4 +12,5 @@ module.exports = function (app, apiVersion) {
     app.put(route + '/updateProduct/:id', passport.authenticate('jwt', { session: false }), productMiddleware.updateProduct, productController.updateProduct);
     app.get(route + '/getProductBy/:id', passport.authenticate('jwt', { session: false }), productMiddleware.getProductById, productController.getProductById);
     app.get(route + '/getAllProducts', passport.authenticate('jwt', { session: false }), productMiddleware.getAllProducts, productController.getProducts);
+    // app.delete(route + '/deleteProducts', passport.authenticate('jwt', { session: false }), productMiddleware.deleteProduct, productController.deleteProduct);
 }
